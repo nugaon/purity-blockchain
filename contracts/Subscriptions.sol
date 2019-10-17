@@ -12,9 +12,9 @@ contract Subscriptions {
 
 	event SubscriptionHappened(address indexed _subscriber);
 
-	constructor() public {
+	constructor(address owner) public {
         period = 2592000; // 30 days
-        contentCreator = msg.sender;
+        contentCreator = owner;
     }
 
     modifier payedEnough() {
