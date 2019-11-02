@@ -10,7 +10,7 @@ contract Subscriptions {
     uint public period; // how many seconds the subscriber's subscription lives
     mapping(address => uint) public userSubTimes; //timestamp
 
-	event SubscriptionHappened(address indexed _subscriber);
+	event SubscriptionHappened(address _subscriber);
 
 	constructor(address owner) public {
         period = 2592000; // 30 days
@@ -37,7 +37,6 @@ contract Subscriptions {
         public
 		payedEnough
         payable
-        returns (bool)
     {
         uint subTime = userSubTimes[msg.sender];
 
@@ -55,7 +54,6 @@ contract Subscriptions {
         }
 
 		emit SubscriptionHappened(msg.sender);
-        return true;
 	}
 
     function setSubscriptionPrice(uint value) public onlyContentCreator {

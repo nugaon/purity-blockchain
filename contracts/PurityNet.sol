@@ -14,7 +14,7 @@ contract PurityNet {
     address private admin;
 
     mapping(bytes32 => ContentChannel) public contentChannels;
-    mapping(bytes32 => bytes32[]) private topics; //points to channelnames
+    mapping(bytes32 => bytes32[]) public topics; //points to channelnames
 
     event NewChannelCreated(bytes32 channelName, bytes32 indexed topic);
 
@@ -30,12 +30,14 @@ contract PurityNet {
         _;
     }
 
-    function createContentChannel(bytes32 contentId, bytes32 topic) public {
+    function createContentChannel(bytes32 contentId, bytes32 topic) public returns (Subscriptions subscriptionHandler, FileUploads fileUploadHandler){
+        subscriptionHandler = new Subscriptions(msg.sender);
+        fileUploadHandler = new FileUploads(msg.sender);
         //TODO if not null
         contentChannels[contentId] = ContentChannel({
             creator: msg.sender,
-            subscriptionHandler: new Subscriptions(msg.sender),
-            fileUploadHandler: new FileUploads(msg.sender)
+            subscriptionHandler: subscriptionHandler,
+            fileUploadHandler: fileUploadHandler
         });
 
         topics[topic].push(contentId);
@@ -57,7 +59,7 @@ contract PurityNet {
         topics[topic].push(channelName);
     }
 
-    function getTopicsLength(bytes32 topic) public view returns (uint) {
+    function getTopicLength(bytes32 topic) public view returns (uint) {
         return topics[topic].length;
     }
 

@@ -9,7 +9,7 @@ contract('PurityNet', (accounts) => {
         const channel = web3.utils.fromAscii('contentChannel1');
 
         await instance.createContentChannel(channel, topic);
-        const topicsLength = await instance.getTopicsLength(topic);
+        const topicsLength = await instance.getTopicLength(topic);
         const channel2 = await instance.getTopicItem(topic, topicsLength - 1);
 
         assert.equal(channel, channel2.substring(0, 32), "The channel creation wasn't successful");
