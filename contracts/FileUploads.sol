@@ -3,26 +3,28 @@ pragma solidity >=0.4.25 <0.6.0;
 contract FileUploads {
 
     struct Content {
-        uint8 protocol; // 0: ipfs
-        uint8 contentType; // for the client how to process the information; 0: undefined, 1: dns
+        uint8 protocol; // 0: dns, 1: ipfs
+        uint8 contentType; // for the client how to process the information; 0: undefined, 1: image, 2: video, etc.
         string fileAddress;
+        string summary;
         string password; //password for the encrypted content after reveal.
+        uint uploadTime; //timestamp
     }
-
     mapping(address => Content[]) private userRequiredContents; //specific encrypted content ID
     Content[] public subscriberContents; // linked to batched encrypted content IDs
+    Content public debutContent;
     address public contentCreator;
 
     event NewContentUploaded(uint subscriberContentIndex, string comment);
     event RevealContentForUser(address indexed user, uint requiredContentIndex);
 
-    constructor(address owner) public {
-        contentCreator = owner;
+    constructor(address _contentCreator) public {
+        contentCreator = _contentCreator;
     }
 
     modifier onlyContentCreator() {
         require(
-            contentCreator == msg.sender,
+            contentCreator == tx.origin || contentCreator == msg.sender,
             "Only the content creator can call this function"
         );
         _;
@@ -32,30 +34,62 @@ contract FileUploads {
         return userRequiredContents[msg.sender].length;
     }
 
+    function setDebutContent(
+        uint8 _protocol,
+        string memory _fileAddress,
+        uint8 _contentType
+    )   public
+        returns(bool)
+    {
+        debutContent = Content({
+            protocol: _protocol,
+            fileAddress: _fileAddress,
+            contentType: _contentType,
+            summary: "",
+            password: "",
+            uploadTime: now
+        });
+        return true;
+    }
+
     /// The batchedLinks is a pointer to a p2p storage address where the subscribers specific encrypted content ids have
-    function uploadSubscriberContent(string memory batchedLinks, uint8 protocol, uint8 contentcontentType, string memory contentSummary, string memory password) public onlyContentCreator {
+    function uploadSubscriberContent(
+        uint8 _protocol,
+        string memory _fileAddress,
+        uint8 _contentType,
+        string memory _password,
+        string memory _contentSummary
+    )   public
+        onlyContentCreator
+    {
         subscriberContents.push(Content({
-            protocol: protocol,
-            fileAddress: batchedLinks,
-            contentType: contentcontentType,
-            password: password
+            protocol: _protocol,
+            fileAddress: _fileAddress,
+            contentType: _contentType,
+            password: _password,
+            summary: _contentSummary,
+            uploadTime: now
         }));
 
-        emit NewContentUploaded(subscriberContents.length - 1, contentSummary);
+        emit NewContentUploaded(subscriberContents.length - 1, _contentSummary);
     }
 
     function getSubscriberContentsLength() public view returns (uint) {
         return subscriberContents.length;
     }
 
-    function revealContentForUser(address user, string memory encryptedContentAddress, uint8 protocolId, uint8 contentcontentType, string memory password) public {
-        userRequiredContents[msg.sender].push(Content({
-            fileAddress: encryptedContentAddress,
-            contentType: contentcontentType,
-            protocol: protocolId,
-            password: password
-        }));
+    /* function revealContentForUser(
+        string memory _fileAddress,
+        uint8 _contentType,
+        uint8 _protocolId,
+        string memory _password,
+        address _user
+    )
+        public
+    {
+        //TODO
+        //indexid
 
-        emit RevealContentForUser(user, userRequiredContents[msg.sender].length - 1);
-    }
+        emit RevealContentForUser(_user, userRequiredContents[msg.sender].length - 1);
+    } */
 }
