@@ -14,16 +14,17 @@ contract ContentChannel {
 
     event RevealContentForUser(address indexed user, uint requiredContentIndex);
 
-    constructor(bytes32 _channelName, address _owner) public {
+    constructor(bytes32 _channelName, uint _subPrice, string memory _description, address _owner) public {
         channelName = _channelName;
         contentCreator = _owner;
         admin = msg.sender;
-        subscriptionHandler = new Subscriptions(_owner);
+        subscriptionHandler = new Subscriptions(_subPrice, _owner);
         fileUploadHandler = new FileUploads(_owner);
+        description = _description;
     }
 
-    function subscribeToChannel() public payable returns(bool) {
-        return subscriptionHandler.subscribe();
+    function subscribeToChannel(bool pubKeyPrefix, bytes32 pubKey) public payable returns(bool) {
+        return subscriptionHandler.subscribe(pubKeyPrefix, pubKey);
     }
 
     function setDescription(string memory _description) public returns (bool) {

@@ -33,12 +33,12 @@ contract PurityNet {
 
     // Channel functions
 
-    function createContentChannel(bytes32 channelName, bytes32 topic)
+    function createContentChannel(bytes32 channelName, bytes32 topic, uint subPrice, string memory description)
         public
         uniqueChannel(channelName)
         returns (ContentChannel contentChannel)
     {
-        contentChannel = new ContentChannel(channelName, msg.sender);
+        contentChannel = new ContentChannel(channelName, subPrice, description, msg.sender);
         contentChannels[channelName] = contentChannel;
 
         //topic handling
@@ -51,12 +51,12 @@ contract PurityNet {
         emit NewChannelCreated(channelName, topic);
     }
 
-    function subscribeToChannel(bytes32 channelName)
+    function subscribeToChannel(bytes32 channelName, bool pubKeyPrefix, bytes32 pubKey)
         public
         payable
         returns(bool)
     {
-        return contentChannels[channelName].subscribeToChannel();
+        return contentChannels[channelName].subscribeToChannel(pubKeyPrefix, pubKey);
     }
 
     //Topic functions
