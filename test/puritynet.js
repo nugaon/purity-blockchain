@@ -5,12 +5,12 @@ contract('PurityNet', (accounts) => {
 
     it('Creates a channel', async() => {
         const instance = await PurityNet.deployed();
-        const topic = web3.utils.fromAscii('topic1');
+        const category = web3.utils.fromAscii('category1');
         const channel = web3.utils.fromAscii('contentChannel1');
 
-        await instance.createContentChannel(channel, topic);
-        const topicsLength = await instance.getTopicLength(topic);
-        const channel2 = await instance.getTopicItem(topic, topicsLength - 1);
+        await instance.createContentChannel(channel, category);
+        const categoryChannelsLength = await instance.getcategoryLength(category);
+        const channel2 = await instance.getcategoryItem(category, categoryChannelsLength - 1);
 
         assert.equal(channel, channel2.substring(0, 32), "The channel creation wasn't successful");
     })
