@@ -1,5 +1,7 @@
 pragma solidity >=0.4.25 <0.6.0;
 
+import { PurityNet } from "./PurityNet.sol";
+
 contract FileUploads {
 
     struct Content {
@@ -14,12 +16,16 @@ contract FileUploads {
     Content[] public subscriberContents; // linked to batched encrypted content IDs
     Content public debutContent;
     address public contentCreator;
+    uint public channelId;
+    PurityNet private purityNet;
 
     event NewContentUploaded(uint subscriberContentIndex, string comment);
     event RevealContentForUser(address indexed user, uint requiredContentIndex);
 
-    constructor(address _contentCreator) public {
+    constructor(address _contentCreator, uint _channelId, PurityNet _purityNet) public {
         contentCreator = _contentCreator;
+        channelId = _channelId;
+        purityNet = _purityNet;
     }
 
     modifier onlyContentCreator() {

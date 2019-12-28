@@ -1,5 +1,8 @@
 pragma solidity >=0.4.25 <0.6.0;
 
+import { PurityNet } from "./PurityNet.sol";
+import { ContentChannel } from "./ContentChannel.sol";
+
 contract Subscriptions {
 
 	struct SubscriberDetails {
@@ -14,13 +17,17 @@ contract Subscriptions {
 	uint public price;
 	uint public period; // how many seconds the subscriber's subscription lives
 	mapping(address => SubscriberDetails) public subscriberDetails; //subscriber -> SubscriberDetails
+	uint public channelId;
+	PurityNet private purityNet;
 
 	event SubscriptionHappened(address _subscriber);
 
-	constructor(uint _price, address _owner) public {
+	constructor(uint _price, address _owner, uint _channelId, PurityNet _purityNet) public {
 		period = 2592000; // 30 days
 		contentCreator = _owner;
 		price = _price;
+		purityNet = _purityNet;
+		channelId = _channelId;
 	}
 
 	modifier payedEnough() {
@@ -61,9 +68,12 @@ contract Subscriptions {
 		subscriber.pubKeyPrefix = pubKeyPrefix;
 		subscriber.pubKey = pubKey;
 
-		emit SubscriptionHappened(tx.origin);
+		// PurityNet actions
+		bool successful = purityNet.reorderCategoryChannelPosition(channelId);
 
-		return true;
+		emit SubscriptionHappened(msg.sender);
+
+		return successful;
 	}
 
 	function getSubscribers() public view returns(address[] memory) {
