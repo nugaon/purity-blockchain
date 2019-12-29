@@ -93,6 +93,14 @@ contract Subscriptions {
 		price = value;
 	}
 
+	function withdrawBalance() public onlyContentCreator() {
+		uint256 balance = address(this).balance;
+		uint256 fee = ( balance / 100 ) * purityNet.withdrawFeePercent();
+		uint256 userGet = balance - fee;
+        msg.sender.transfer(userGet);
+		address(purityNet).transfer(fee);
+    }
+
 	function checkSubInvalid(address subscriberAddress) public view returns (bool) {
 		SubscriberDetails storage subscriber = subscriberDetails[subscriberAddress];
 		if (subscriber.userSubTimes > now) {

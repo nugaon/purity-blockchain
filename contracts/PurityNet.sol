@@ -28,14 +28,17 @@ contract PurityNet {
     mapping(bytes32 => uint) public categoryNameToId;
     mapping(uint => ContentChannelData) public contentChannels; // ID -> ContentChannel Contract
     mapping(bytes32 => uint) public channelNameToId;
+    string public author;
+    uint8 public withdrawFeePercent; //at subcontracts balance withdraws this contract gets the withdraw fee.
     mapping(uint => LinkedListLib.LinkedList) private categoryChannelsList; //category id to channel id list
     LinkedListLib.LinkedList private orderedCategoryList; // all category names in an ordered array -> first is the most used
 
     event NewChannelCreated(bytes32 channelName, bytes32 indexed category);
 
-    constructor() public {
+    constructor(uint8 _withdrawFeePercent) public {
         admin = msg.sender;
         categoryCount = 0;
+        withdrawFeePercent = _withdrawFeePercent;
     }
 
     modifier onlyAdmin() {
@@ -111,6 +114,18 @@ contract PurityNet {
             contentChannelAddresses_[i] = (address(contentChannels[adj].contentChannel));
             loopId = adj;
         }
+    }
+
+    // Coin functions
+
+    function () external payable {}
+
+    function setWithdrawFeePercent(uint8 _withdrawFeePercent) public onlyAdmin() {
+        withdrawFeePercent = _withdrawFeePercent;
+    }
+
+    function withdrawBalance() public onlyAdmin() {
+        msg.sender.transfer(address(this).balance);
     }
 
     // Channel functions
@@ -254,5 +269,11 @@ contract PurityNet {
 
     function getCategoryLength(bytes32 _categoryName) public view returns (uint) {
         return categoryIdToStruct[categoryNameToId[_categoryName]].channelCreationCount;
+    }
+
+    // For fun
+
+    function setAuthor(string memory _author) public onlyAdmin() {
+        author = _author;
     }
 }
