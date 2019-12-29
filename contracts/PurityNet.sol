@@ -49,7 +49,7 @@ contract PurityNet {
     modifier uniqueChannel(bytes32 channelName) {
         require(
             address(contentChannels[channelNameToId[channelName]].contentChannel) == address(0),
-            "Channel haSubscription happened for 'SubscriptionHappened' event at Contract ${channel.channelName}s benn already registered"
+            "Channel has been already registered"
         );
         _;
     }
