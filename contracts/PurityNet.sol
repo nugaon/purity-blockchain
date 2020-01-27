@@ -17,6 +17,11 @@ contract PurityNet {
         ContentChannel contentChannel;
     }
 
+    struct UserKey {
+        bool pubKeyPrefix; // User's can upload their public encryption keys, which will be used to get their subscribed premium content. this is the first part of the key
+        bytes32 pubKey; // this is the second (last) part of the public key of the user
+    }
+
     address private admin;
     uint256 constant NULL = 0;
     uint256 constant HEAD = 0;
@@ -26,19 +31,22 @@ contract PurityNet {
     uint public channelCount; //how many channels exist -> current + 1 will be the next inserted item
     mapping(uint => Category) public categoryIdToStruct;
     mapping(bytes32 => uint) public categoryNameToId;
-    mapping(uint => ContentChannelData) public contentChannels; // ID -> ContentChannel Contract
+    mapping(uint => ContentChannelData) private contentChannels; // ID -> ContentChannel Contract
     mapping(bytes32 => uint) public channelNameToId;
-    string public author;
     uint8 public withdrawFeePercent; //at subcontracts balance withdraws this contract gets the withdraw fee.
+    uint public minSubscriptionFee; //how many Wei should be paid minimum with a Subscription
     mapping(uint => LinkedListLib.LinkedList) private categoryChannelsList; //category id to channel id list
     LinkedListLib.LinkedList private orderedCategoryList; // all category names in an ordered array -> first is the most used
+    mapping(address => UserKey) public userKeys; //subscriber -> Subscriber Public Key
 
     event NewChannelCreated(bytes32 channelName, bytes32 indexed category);
+    event NewPremiumUser(address user);
 
-    constructor(uint8 _withdrawFeePercent) public {
+    constructor(uint8 _withdrawFeePercent, uint _minSubscriptionFee) public {
         admin = msg.sender;
         categoryCount = 0;
         withdrawFeePercent = _withdrawFeePercent;
+        minSubscriptionFee = _minSubscriptionFee;
     }
 
     modifier onlyAdmin() {
@@ -49,13 +57,13 @@ contract PurityNet {
         _;
     }
 
-    modifier uniqueChannel(bytes32 channelName) {
+    /* modifier uniqueChannel(bytes32 channelName) {
         require(
             address(contentChannels[channelNameToId[channelName]].contentChannel) == address(0),
             "Channel has been already registered"
         );
         _;
-    }
+    } */
 
     // External functions
 
@@ -124,31 +132,39 @@ contract PurityNet {
         withdrawFeePercent = _withdrawFeePercent;
     }
 
+    function setSubscriptionFee(uint8 _minSubscriptionFee) public onlyAdmin() {
+        minSubscriptionFee = _minSubscriptionFee;
+    }
+
     function withdrawBalance() public onlyAdmin() {
         msg.sender.transfer(address(this).balance);
     }
 
     // Channel functions
 
-    function createContentChannel(bytes32 channelName, bytes32 category, uint subPrice, string memory description)
-        public
-        uniqueChannel(channelName)
+    function createContentChannel(bytes32 _channelName, bytes32 _category, uint _subPrice, uint _subTime, bool _permitExternalSubs, string calldata _description)
+        external
+        //uniqueChannel(_channelName)
         returns (ContentChannel contentChannel)
     {
+        require(
+            address(contentChannels[channelNameToId[_channelName]].contentChannel) == address(0),
+            "Channel has been already registered"
+        );
         //category ordering handling
-        uint256 categoryId = categoryNameToId[category];
+        uint256 categoryId = categoryNameToId[_category];
         uint256 channelCreationCount; // for channel id.
         // if the category not existed before, we create it.
         if (categoryId == 0) {
             categoryId = ++categoryCount;
-            categoryNameToId[category] = categoryId;
+            categoryNameToId[_category] = categoryId;
             channelCreationCount = 1;
             categoryIdToStruct[categoryId] = Category({
-                name: category,
+                name: _category,
                 channelCreationCount: channelCreationCount
             });
             orderedCategoryList.push(categoryId, PREV);
-        } else { // if it existed, reorder by channel creation countchannelName
+        } else { // if it existed, reorder by channel creation count_channelName
             Category storage categoryData = categoryIdToStruct[categoryId];
             channelCreationCount = ++categoryData.channelCreationCount;
             uint256 loopId = categoryId;
@@ -169,15 +185,15 @@ contract PurityNet {
             }
         }
 
-        contentChannel = new ContentChannel(channelName, subPrice, description, msg.sender, ++channelCount);
+        contentChannel = new ContentChannel(_channelName, _subPrice, _subTime, _permitExternalSubs, _description, msg.sender, ++channelCount);
 
         //category items handling
-        channelNameToId[channelName] = channelCount;
+        channelNameToId[_channelName] = channelCount;
         contentChannels[channelCount].contentChannel = contentChannel;
         contentChannels[channelCount].categoryIds.push(categoryId);
         categoryChannelsList[categoryId].push(channelCount, PREV); //last item in the list | only one category at creation
 
-        emit NewChannelCreated(channelName, category);
+        emit NewChannelCreated(_channelName, _category);
     }
 
     function getChannelDataFromId(uint _id) public view returns (uint[] memory, address) {
@@ -271,9 +287,32 @@ contract PurityNet {
         return categoryIdToStruct[categoryNameToId[_categoryName]].channelCreationCount;
     }
 
-    // For fun
+    // Subscriber functions
 
-    function setAuthor(string memory _author) public onlyAdmin() {
-        author = _author;
+    function getUsersKeys(address[] calldata _users) external view returns (bool[] memory pubKeyPrefixes_, bytes32[] memory pubKeys_) {
+        pubKeyPrefixes_ = new bool[](_users.length);
+        pubKeys_ = new bytes32[](_users.length);
+
+        for (uint256 i = 0; i < _users.length; i++) {
+            UserKey storage userKey = userKeys[_users[i]];
+            pubKeyPrefixes_[i] = userKey.pubKeyPrefix;
+            pubKeys_[i] = userKey.pubKey;
+        }
+    }
+
+    /// @dev First time when a user subscribe to a Channel this method called.
+    function register(bool _pubKeyPrefix, bytes32 _pubKey) public returns(bool) {
+        UserKey storage userKey = userKeys[tx.origin];
+        if(userKey.pubKey != bytes32(0)) {
+            userKey.pubKey = _pubKey;
+            userKey.pubKeyPrefix = _pubKeyPrefix;
+        } else {
+            userKey.pubKey = _pubKey;
+            userKey.pubKeyPrefix = _pubKeyPrefix;
+
+            emit NewPremiumUser(tx.origin);
+        }
+
+        return true;
     }
 }

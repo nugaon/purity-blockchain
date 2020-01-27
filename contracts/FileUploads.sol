@@ -9,17 +9,18 @@ contract FileUploads {
         uint8 contentType; // for the client how to process the information; 0: undefined, 1: image, 2: video, etc.
         string fileAddress;
         string summary;
-        string password; //password for the encrypted content after reveal.
         uint uploadTime; //timestamp
     }
-    mapping(address => Content[]) private userRequiredContents; //specific encrypted content ID
+    //mapping(address => Content[]) private userRequiredContents; //specific encrypted content ID
     Content[] public subscriberContents; // linked to batched encrypted content IDs
     Content public debutContent;
     address public contentCreator;
     uint public channelId;
     PurityNet private purityNet;
+    bytes32[] public contentLabels;
+    mapping(bytes32 => uint[]) private labelledContentIndexes;
 
-    event NewContentUploaded(uint subscriberContentIndex, string comment);
+    event NewContentUploaded(bytes32 indexed contentLabel, uint subscriberContentIndex, string comment);
     event RevealContentForUser(address indexed user, uint requiredContentIndex);
 
     constructor(address _contentCreator, uint _channelId, PurityNet _purityNet) public {
@@ -36,52 +37,46 @@ contract FileUploads {
         _;
     }
 
-    function getRequiredContentsLength() public view returns(uint) {
+    /* function getRequiredContentsLength() public view returns(uint) {
         return userRequiredContents[msg.sender].length;
-    }
-
-    function setDebutContent(
-        uint8 _protocol,
-        string memory _fileAddress,
-        uint8 _contentType
-    )   public
-        returns(bool)
-    {
-        debutContent = Content({
-            protocol: _protocol,
-            fileAddress: _fileAddress,
-            contentType: _contentType,
-            summary: "",
-            password: "",
-            uploadTime: now
-        });
-        return true;
-    }
+    } */
 
     /// The batchedLinks is a pointer to a p2p storage address where the subscribers specific encrypted content ids have
     function uploadSubscriberContent(
         uint8 _protocol,
-        string memory _fileAddress,
+        string calldata _fileAddress,
         uint8 _contentType,
-        string memory _password,
-        string memory _contentSummary
-    )   public
+        string calldata _contentSummary,
+        bytes32 _contentLabel
+    )   external
         onlyContentCreator
     {
         subscriberContents.push(Content({
             protocol: _protocol,
             fileAddress: _fileAddress,
             contentType: _contentType,
-            password: _password,
             summary: _contentSummary,
             uploadTime: now
         }));
 
-        emit NewContentUploaded(subscriberContents.length - 1, _contentSummary);
+        if(_contentLabel != "") {
+            contentLabels.push(_contentLabel);
+            labelledContentIndexes[_contentLabel].push(subscriberContents.length - 1);
+        }
+
+        emit NewContentUploaded(_contentLabel, subscriberContents.length - 1, _contentSummary);
     }
 
-    function getSubscriberContentsLength() public view returns (uint) {
+    function getLabelledContentIndexes(bytes32 label) external view returns (uint[] memory) {
+        return labelledContentIndexes[label];
+    }
+
+    function getSubscriberContentsLength() external view returns (uint) {
         return subscriberContents.length;
+    }
+
+    function getContentLabels() external view returns (bytes32[] memory) {
+        return contentLabels;
     }
 
     /* function revealContentForUser(

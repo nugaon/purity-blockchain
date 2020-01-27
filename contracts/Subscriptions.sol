@@ -5,29 +5,26 @@ import { ContentChannel } from "./ContentChannel.sol";
 
 contract Subscriptions {
 
-	struct SubscriberDetails {
-		bool pubKeyPrefix; // User's can upload their public encryption keys, which will be used to get their subscribed premium content. this is the first part of the key
-		bytes32 pubKey; // this is the second (last) part of the public key of the user
-		uint userSubTimes; // timestamp
-	}
 	/// Get the sender's subscribers that could be already invalid too.
 	/// To check how many subscribers invalid call getRemovableSubscibers()
 	address[] public subscribers;
 	address public contentCreator;
 	uint public price;
 	uint public period; // how many seconds the subscriber's subscription lives
-	mapping(address => SubscriberDetails) public subscriberDetails; //subscriber -> SubscriberDetails
+	bool public permitExternalSubs; //if false, only the owner can invite Subscribers
+	mapping(address => uint) public premiumDeadlines; //subscriber -> SubscriberDetails
 	uint public channelId;
 	PurityNet private purityNet;
 
 	event SubscriptionHappened(address _subscriber);
 
-	constructor(uint _price, address _owner, uint _channelId, PurityNet _purityNet) public {
-		period = 2592000; // 30 days
-		contentCreator = _owner;
+	constructor(uint _price, uint _period, address _owner, uint _channelId, bool _permitExternalSubs, PurityNet _purityNet) public {
 		price = _price;
-		purityNet = _purityNet;
+		period = _period; // 2592000 -> 30 days
+		contentCreator = _owner;
 		channelId = _channelId;
+		permitExternalSubs = _permitExternalSubs;
+		purityNet = _purityNet;
 	}
 
 	modifier payedEnough() {
@@ -46,51 +43,115 @@ contract Subscriptions {
 		_;
 	}
 
-	function subscribe(bool pubKeyPrefix, bytes32 pubKey)
+	modifier greaterThanMinSubFee() {
+		require(
+			purityNet.minSubscriptionFee() <= msg.value,
+			"You did not send enough coin to perform the action"
+		);
+		_;
+	}
+
+	modifier checkUserRegistered(address _user) {
+		(,bytes32 userKey) = purityNet.userKeys(_user);
+		require(
+			userKey != bytes32(0),
+			"User has not been registered on the PurityNet yet."
+		);
+		_;
+	}
+
+	modifier subscriptionEnabled() {
+		require(
+			permitExternalSubs,
+			"Subscription is not enabled"
+		);
+		_;
+	}
+
+	/// @dev Call this function if user hasn't been subscribed on PurityNet ever before.
+	function subscribe(bool _pubKeyPrefix, bytes32 _pubKey)
 		public
 		payedEnough
+		greaterThanMinSubFee
+		subscriptionEnabled
 		payable
 		returns (bool)
 	{
-		SubscriberDetails storage subscriber = subscriberDetails[tx.origin];
-		if (subscriber.userSubTimes == 0) {
-			subscriber.userSubTimes = now + period;
+		bool registration = purityNet.register(_pubKeyPrefix, _pubKey);
+		if(registration) {
+			return addToPremium(tx.origin);
+		}
+		return false;
+	}
+
+	function subscribe()
+		public
+		payedEnough
+		greaterThanMinSubFee
+		checkUserRegistered(tx.origin)
+		subscriptionEnabled
+		payable
+		returns (bool)
+	{
+		return addToPremium(tx.origin);
+	}
+
+	/// @dev Can be called by only Content Creator.
+	function invite(address _user)
+		public
+		greaterThanMinSubFee
+		onlyContentCreator
+		checkUserRegistered(_user)
+		payable
+		returns(bool)
+	{
+		return addToPremium(_user);
+	}
+
+	function addToPremium(address _user) private returns(bool){
+		uint userSubTime = premiumDeadlines[_user];
+		if (userSubTime == 0) {
+			userSubTime = now + period;
 
 			// also have to add to the content creator subscriptions array
-			subscribers.push(tx.origin);
+			subscribers.push(_user);
 		} else { // he already subscribed to this address
-			if (subscriber.userSubTimes >= now) {
-				subscriber.userSubTimes += period;
+			if (userSubTime >= now) {
+				userSubTime += period;
 			} else {
-				subscriber.userSubTimes = now + period;
+				userSubTime = now + period;
 			}
 		}
-		subscriber.pubKeyPrefix = pubKeyPrefix;
-		subscriber.pubKey = pubKey;
+
+		premiumDeadlines[_user] = userSubTime;
 
 		// PurityNet actions
 		bool successful = purityNet.reorderCategoryChannelPosition(channelId);
 
-		emit SubscriptionHappened(msg.sender);
+		emit SubscriptionHappened(_user);
 
 		return successful;
 	}
 
-	function getSubscribers() public view returns(address[] memory) {
+	/* function getSubscribers() external view returns(address[] memory) {
 		return subscribers;
-	}
+	} */
 
 	/// Only experimental yet.
 	/* function getSubscribersDetails(address[] memory subscriberAddresses) public view returns(SubscriberDetails[] memory) {
-		SubscriberDetails[] memory subscriberDetails_ = new SubscriberDetails[](subscriberAddresses.length);
+		SubscriberDetails[] memory premiumDeadlines_ = new SubscriberDetails[](subscriberAddresses.length);
 		for (uint i = 0; i < subscriberAddresses.length; i++) {
-			subscriberDetails_[i] = subscriberDetails[subscriberAddresses[i]];
+			premiumDeadlines_[i] = premiumDeadlines[subscriberAddresses[i]];
 		}
-		return subscriberDetails_;
+		return premiumDeadlines_;
 	} */
 
 	function setSubscriptionPrice(uint value) public onlyContentCreator {
 		price = value;
+	}
+
+	function setPermitExternalSubs(bool _permitExternalSubs) public onlyContentCreator {
+		permitExternalSubs = _permitExternalSubs;
 	}
 
 	function withdrawBalance() public onlyContentCreator() {
@@ -102,8 +163,7 @@ contract Subscriptions {
     }
 
 	function checkSubInvalid(address subscriberAddress) public view returns (bool) {
-		SubscriberDetails storage subscriber = subscriberDetails[subscriberAddress];
-		if (subscriber.userSubTimes > now) {
+		if (premiumDeadlines[subscriberAddress] > now) {
 			return false;
 		}
 		return true;
@@ -111,7 +171,7 @@ contract Subscriptions {
 
 	/// Get back invalid subscriber indexes of the caller by presents boolean in its index
 	/// it is useful to make parameter for removeSubscribers(uint[]) function.
-	function getRemovableSubscribers() public view returns (bool[] memory){
+	function getRemovableSubscribers() external view returns (bool[] memory){
 		bool[] memory removableSubscribers = new bool[](subscribers.length);
 
 		for (uint i = 0; i < subscribers.length; i++) {
@@ -124,8 +184,13 @@ contract Subscriptions {
 	}
 
 	/// Get the content creator's subscription count
-	function getSubscriptionCount() public view returns (uint length) {
+	function getSubscriptionCount() external view returns (uint length) {
 		return subscribers.length;
+	}
+
+	function getSubscribersWithKeys() external view returns(address[] memory subscribers_, bool[] memory pubKeyPrefixes_, bytes32[] memory pubKeys_) {
+		subscribers_ = subscribers;
+		(pubKeyPrefixes_, pubKeys_) = purityNet.getUsersKeys(subscribers_);
 	}
 
 	/// Remove subscribers from the 'subscribers' array at the given indexes
@@ -148,7 +213,7 @@ contract Subscriptions {
 	}
 
 	/// Get back the last valid address index from the 'subscribers' array
-	function getLastSubscriberIndex() public view returns (uint) {
+	function getLastSubscriberIndex() private view returns (uint) {
 		uint i = subscribers.length - 1;
 		while (i > 0) {
 			if (subscribers[i] != address(0)) {

@@ -6,9 +6,9 @@ import { PurityNet } from "./PurityNet.sol";
 
 contract ContentChannel {
 
-    Subscriptions subscriptionHandler;
-    FileUploads fileUploadHandler;
-    address contentCreator;
+    Subscriptions public subscriptionHandler;
+    FileUploads public fileUploadHandler;
+    address public contentCreator;
     PurityNet private purityNet;
     bytes32 public channelName;
     string public description;
@@ -16,27 +16,27 @@ contract ContentChannel {
 
     event RevealContentForUser(address indexed user, uint requiredContentIndex);
 
-    constructor(bytes32 _channelName, uint _subPrice, string memory _description, address _owner, uint _channelId) public {
+    constructor(bytes32 _channelName, uint _subPrice, uint _subTime, bool _permitExternalSubs, string memory _description, address _owner, uint _channelId) public {
         channelName = _channelName;
         contentCreator = _owner;
         purityNet = PurityNet(msg.sender);
-        subscriptionHandler = new Subscriptions(_subPrice, _owner, _channelId, purityNet);
+        subscriptionHandler = new Subscriptions(_subPrice, _subTime, _owner, _channelId, _permitExternalSubs, purityNet);
         fileUploadHandler = new FileUploads(_owner, _channelId, purityNet);
         description = _description;
         channelId = _channelId;
     }
 
-    function setDescription(string memory _description) public returns (bool) {
+    function setDescription(string calldata _description) external returns (bool) {
         description = _description;
         return true;
     }
 
-    function getSubscriptionCount() public view returns (uint length) {
+    function getSubscriptionCount() external view returns (uint length) {
         return subscriptionHandler.getSubscriptionCount();
     }
 
     function getContentData()
-        public
+        external
         view
         returns(
             address subscriptionHandler_,
