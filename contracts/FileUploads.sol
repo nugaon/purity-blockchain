@@ -13,7 +13,7 @@ contract FileUploads {
     }
     //mapping(address => Content[]) private userRequiredContents; //specific encrypted content ID
     Content[] public subscriberContents; // linked to batched encrypted content IDs
-    Content public debutContent;
+    //Content public debutContent;
     address public contentCreator;
     uint public channelId;
     PurityNet private purityNet;
