@@ -36,16 +36,28 @@ contract ContentChannel {
         return true;
     }
 
-    function getContentData()
+    function getChannelData()
         external
         view
         returns(
             address contentCreator_,
-            bytes32 channelName_
+            bytes32 channelName_,
+            string memory description_,
+            uint channelId_,
+            uint balance_,
+            uint price_,
+            uint subscriptionCount_,
+            uint userSubTime_
         )
     {
         contentCreator_ = contentCreator;
         channelName_ = channelName;
+        description_ = description;
+        channelId_ = channelId;
+        balance_ = address(this).balance;
+        price_ = price;
+        subscriptionCount_ = subscribers.length;
+        userSubTime_ = premiumDeadlines[msg.sender];
     }
 
     // FileUploads
@@ -87,8 +99,11 @@ contract ContentChannel {
         }));
 
         if(_contentLabel != "") {
-            contentLabels.push(_contentLabel);
-            labelledContentIndexes[_contentLabel].push(subscriberContents.length - 1);
+            uint[] storage contentIndexes = labelledContentIndexes[_contentLabel];
+            if(contentIndexes.length == 0) {
+              contentLabels.push(_contentLabel);
+            }
+            contentIndexes.push(subscriberContents.length - 1);
         }
 
         emit NewContentUploaded(_contentLabel, subscriberContents.length - 1, _contentSummary);
