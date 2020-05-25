@@ -1,0 +1,25 @@
+{
+  "name": "purity-contracts",
+  "version": "0.0.1",
+  "description": "Solidity contracts which provide the Purity application's blockchain functionalities",
+  "scripts": {
+    "build": "truffle compile",
+    "migrate": "truffle migrate",
+    "test": "truffle test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "purity-identity": "^0.1.0",
+    "truffle": "^5.1.27"
+  },
+  "keywords": [
+    "solidity",
+    "decentralized-internet",
+    "web3.0",
+    "web3",
+    "contract",
+    "purity"
+  ],
+  "author": "Viktor Levente Tóth",
+  "license": "ISC"
+}

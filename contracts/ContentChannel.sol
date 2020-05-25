@@ -63,7 +63,7 @@ contract ContentChannel {
     // FileUploads
 
     struct Content {
-        uint8 protocol; // 0: dns, 1: ipfs
+        uint8 protocol; // 0: dns, 1: ipfs, 2: ipns
         uint8 contentType; // for the client how to process the information; 0: undefined, 1: image, 2: video, etc.
         string fileAddress;
         string summary;
@@ -136,7 +136,7 @@ contract ContentChannel {
     modifier payedEnough() {
         require(
             price <= msg.value,
-            "The sended coin not enough for subscribe to the content creator."
+            "The coin value is not enough for subscribe to the content channel."
         );
         _;
     }

@@ -132,7 +132,7 @@ contract PurityNet {
         withdrawFeePercent = _withdrawFeePercent;
     }
 
-    function setSubscriptionFee(uint8 _minSubscriptionFee) public onlyAdmin() {
+    function setSubscriptionFee(uint _minSubscriptionFee) public onlyAdmin() {
         minSubscriptionFee = _minSubscriptionFee;
     }
 
