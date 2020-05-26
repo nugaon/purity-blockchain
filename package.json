@@ -5,10 +5,12 @@
   "scripts": {
     "build": "truffle compile",
     "migrate": "truffle migrate",
-    "test": "truffle test"
+    "test": "truffle test",
+    "start-testchain": "ganache-cli -u 0 -i 5757 --db testchain-db"
   },
   "dependencies": {},
   "devDependencies": {
+    "ganache-cli": "^6.9.1",
     "purity-identity": "^0.1.0",
     "truffle": "^5.1.27"
   },
