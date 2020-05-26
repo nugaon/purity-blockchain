@@ -6,7 +6,7 @@
     "build": "truffle compile",
     "migrate": "truffle migrate",
     "test": "truffle test",
-    "start-testchain": "ganache-cli -u 0 -i 5757 --db testchain-db"
+    "start-testchain": "ganache-cli -d -i 5757 --db testchain-db"
   },
   "dependencies": {},
   "devDependencies": {
