@@ -12,6 +12,7 @@
   "devDependencies": {
     "ganache-cli": "^6.9.1",
     "purity-identity": "^0.1.0",
+    "purity-contracts-js": "0.0.1",
     "truffle": "^5.1.27"
   },
   "keywords": [

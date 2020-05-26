@@ -1,10 +1,12 @@
 
+const { Purity: PurityInstance, ContentChannel: ContentChannelInstance, initPurity } = require("purity-contracts-js")
 const { IdenityService } = require("purity-identity");
 const PurityNet = artifacts.require("PurityNet");
 const ContentChannel = artifacts.require("ContentChannel");
 
-contract("PurityNet", (accounts) => {
+contract("PurityNet", function (accounts) {
     let instance;
+    let purityInstance
     let channel1Address;
     let channel1Instance;
     let account1Identity
@@ -13,6 +15,18 @@ contract("PurityNet", (accounts) => {
 
     before(async function() {
         instance = await PurityNet.deployed();
+        purityInstance = new initPurity(
+            {
+                client: web3,
+                lastBlockNumber: "latest",
+                transactionOptions: {
+                    from: accounts[0]
+                }
+            },
+            {
+                purityAddress: instance.address
+            }
+        )
     });
 
     it("Create channel", async function() {

@@ -1,5 +1,3 @@
-const Subscriptions = artifacts.require("Subscriptions");
-const FileUploads = artifacts.require("FileUploads");
 const ContentChannel = artifacts.require("ContentChannel");
 const PurityNet = artifacts.require("PurityNet");
 
