@@ -15,7 +15,7 @@ contract("PurityNet", (accounts) => {
         instance = await PurityNet.deployed();
     });
 
-    it("Create channel", async() => {
+    it("Create channel", async function() {
         const channelName = "contentChannel1";
         const categoryName = "category1";
 
@@ -36,14 +36,14 @@ contract("PurityNet", (accounts) => {
         assert.equal(channel, channel2Name.substring(0, 32), "The channel has not inserted into the category");
     })
 
-    it("Set min. subscription fee for All Content Channels", async() => {
+    it("Set min. subscription fee for All Content Channels", async function() {
         const subscriptionFee = web3.utils.toWei("0.01");
 
         instance.setSubscriptionFee(subscriptionFee);
         assert.equal(await instance.minSubscriptionFee(), subscriptionFee, "The admin couldn't set the subscription Fee");
     });
 
-    it("Subscribe to the channel", async() => {
+    it("Subscribe to the channel", async function() {
         const channel = new ContentChannel(channel1Address);
 
         account1Identity = new IdenityService()
@@ -72,7 +72,7 @@ contract("PurityNet", (accounts) => {
         assert.equal(await channel.getSubscriptionCount(), 3, 'There are not 3 subscribers');
     });
 
-    it('Remove the first 2 from the 3 subsribers', async() => {
+    it('Remove the first 2 from the 3 subsribers', async function() {
         const channel = new ContentChannel(channel1Address);
 
         await channel.removeSubscribers([2, 0]);
