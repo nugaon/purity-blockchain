@@ -4,7 +4,7 @@
   "description": "Solidity contracts which provide the Purity application's blockchain functionalities",
   "scripts": {
     "build": "truffle compile",
-    "migrate": "truffle migrate",
+    "migrate": "truffle migrate --reset --compile-all",
     "test": "truffle test",
     "start-testchain": "ganache-cli -d -i 5757 --db testchain-db"
   },
@@ -23,6 +23,5 @@
     "contract",
     "purity"
   ],
-  "author": "Viktor Levente Tóth",
-  "license": "ISC"
+  "author": "Viktor Levente Tóth"
 }

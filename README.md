@@ -17,3 +17,10 @@ For test deploy use-case we encourage to try out
 's test blockchain environment.
 You can start it from the project root folder if you installed the project's dependencies
 > npm run start-testchain
+
+# Contribution and Future Licensing
+This project doesn't have any specific license yet, until one contributor doesn't
+join the development of this repository. Until then, Viktor Levente Tóth has exclusive
+copyright above these materials.
+
+__Feel free to make pull requests!__
