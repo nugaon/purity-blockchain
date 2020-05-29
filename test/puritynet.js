@@ -1,5 +1,5 @@
 
-const { Purity: PurityInstance, ContentChannel: ContentChannelInstance, initPurity } = require("purity-contracts-js")
+const { Purity: PurityInstance, ContentChannel: ContentChannelInstance, initPurity } = require("purity-blockchain-js")
 const { IdenityService } = require("purity-identity");
 const PurityNet = artifacts.require("PurityNet");
 const ContentChannel = artifacts.require("ContentChannel");
