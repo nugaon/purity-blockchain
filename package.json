@@ -1,5 +1,5 @@
 {
-  "name": "purity-contracts",
+  "name": "purity-blockchain",
   "version": "0.0.1",
   "description": "Solidity contracts which provide the Purity application's blockchain functionalities",
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "keywords": [
     "solidity",
-    "decentralized-internet",
+    "decentralised-internet",
     "web3.0",
     "web3",
     "contract",

@@ -1,5 +1,6 @@
 # Description
-Solidity contracts which provide the Purity application's blockchain functionalities
+This reposotiry consists solidity contracts which provide the Purity application's
+blockchain functionalities
 
 The goal of these contracts are make searchable, hierarchical and independent source of Content
 Channels, which help to store any content type on interchangeable P2P storage.
@@ -8,7 +9,7 @@ The contracts are only accessible on the Ethereum Rinkeby Testnet until
 the code doesn't reach the most extendable version toward other smart contracts.
 
 # Test
-The testink also covers 'purity-contracts-js' repository cases.
+The testink also covers 'purity-blockchain-js' repository cases.
 > npm run test
 
 # Deploy
